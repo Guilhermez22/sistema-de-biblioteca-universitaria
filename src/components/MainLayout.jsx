@@ -30,7 +30,7 @@ const MainLayout = () => {
   const mainMenuItems = [
     {
       key: "1",
-      label: <Link to="/livros"><ReadOutlined/> Livros</Link>,
+      label: <Link to="/livros"><ReadOutlined /> Livros</Link>,
     },
     {
       key: "2",
@@ -46,7 +46,7 @@ const MainLayout = () => {
     },
   ];
 
-  
+
   return (
     <Layout style={{ minHeight: "100vh", overflowX: "hidden" }}>
       <Header
@@ -135,11 +135,10 @@ const MainLayout = () => {
         style={{
           minHeight: "calc(100vh - 128px)",
           padding: 24,
-          backgroundColor: "#0958d9",
-          color: "#fff",
           border: "1px solid #ccc",
         }}
       >
+
         <Outlet />
       </Content>
 
