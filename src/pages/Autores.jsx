@@ -1,23 +1,36 @@
-import React from "react";
 import { Table, Button } from "antd";
-import { PlusOutlined } from "@ant-design/icons";
 import InnerLayout from "../components/InnerLayout";
+import AutoresDAO from "../daos/AutoresDAO.mjs";
+import { useEffect, useState } from "react";
 
 export default function Autores() {
-  const data = [
-    { id: 1, nome: "Autor 1", nacionalidade: "Brasileira", dataNascimento: "20/03/2001" },
-    { id: 2, nome: "Autor 2", nacionalidade: "Mexicana", dataNascimento: "20/02/2002" },
-  ];
+  const [data, setData] = useState([]);
+
+  useEffect(() => {
+    const autores = new AutoresDAO();
+    autores.carregarAutores().then((lista) => setData(lista));
+  }, []);
+
   const columns = [
     { title: "Nome", dataIndex: "nome", key: "nome" },
-    { title: "Nacionalidade", dataIndex: "nacionalidade", key: "nacionalidade" },
-    { title: "Data de Nascimento", dataIndex: "dataNascimento", key: "dataNascimento" },
+    {
+      title: "Nacionalidade",
+      dataIndex: "nacionalidade",
+      key: "nacionalidade",
+    },
+    {
+      title: "Data de Nascimento",
+      dataIndex: "dataNascimento",
+      key: "dataNascimento",
+    },
     {
       title: "Ações",
       render: () => (
         <>
           <Button type="link">Editar</Button>
-          <Button type="link" danger>Excluir</Button>
+          <Button type="link" danger>
+            Excluir
+          </Button>
         </>
       ),
     },
@@ -39,10 +52,7 @@ export default function Autores() {
   );
 
   return (
-    <InnerLayout
-      title="Gerenciar Autores"
-      extra={<CustomButton />}
-    >
+    <InnerLayout title="Gerenciar Autores" extra={<CustomButton />}>
       <Table
         columns={columns}
         dataSource={data}
