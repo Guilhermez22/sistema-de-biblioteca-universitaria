@@ -1,20 +1,39 @@
-import { Modal, Tabs, Form, Input, DatePicker, Select } from "antd";
-import { UserOutlined, BookOutlined, TeamOutlined } from "@ant-design/icons";
+import { Modal, Form, Input, DatePicker, Select } from "antd";
+import Autores from "../objetos/Autores.mjs"; //este é para criar o objeto Autor
+import AutoresDAO from "../daos/AutoresDAO.mjs"; //este é para salvar o objeto Autor no localStorage
+import dayjs from "dayjs";
 
 const { Option } = Select;
 const { TextArea } = Input;
 
-function Caixa({ isModalOpen, handleOk, handleCancel, tipo }) {
+function Caixa({ isModalOpen, handleOk, handleCancel, tipo, dados }) {
   const [form] = Form.useForm();
+
+  if (dados && tipo === 1) {
+    form.setFieldValue("nome", dados.nome);
+    form.setFieldValue("nacionalidade", dados.nacionalidade);
+    form.setFieldValue("dataNascimento", dayjs(dados.dataNascimento));
+    form.setFieldValue("biografia", dados.biografia);
+  }
 
   const onFinish = (values) => {
     console.log("Dados do formulário:", values);
+    if (tipo === 1) {
+      // Salvar autor
+      const novoAutor = new Autores(); //cria um novo objeto autor
+      novoAutor.setNome(values.nome);
+      novoAutor.setNacionalidade(values.nacionalidade);
+      novoAutor.setDataNascimento(values.dataNascimento);
+      novoAutor.setBiografia(values.biografia);
+      const autoresDAO = new AutoresDAO();
+      autoresDAO.salvarAutores(novoAutor);
+    }
     handleOk(); // Fecha o modal após salvar
   };
 
   return (
     <Modal
-      title="Cadastro" 
+      title="Cadastro"
       open={isModalOpen} //faz o modal abrir
       onOk={() => form.submit()} //função para o que fazer ao clicar em salvar
       onCancel={handleCancel} //função para o que fazer ao clicar em cancelar

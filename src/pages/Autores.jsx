@@ -8,8 +8,12 @@ import Caixa from "../components/Caixa.jsx";
 export default function Autores() {
   const [data, setData] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [autorSelecionado, setAutorSelecionado] = useState(null);
 
-  const showModal = () => {
+  const showModal = (dados) => {
+    if(dados) {
+      setAutorSelecionado(dados);
+    }
     setIsModalOpen(true);
   };
 
@@ -42,7 +46,10 @@ export default function Autores() {
       title: "Ações",
       render: () => (
         <>
-          <Button type="link">
+          <Button type="link" onClick = {function Dados(){
+            showModal();
+            
+          }}>
             <EditOutlined />
             Editar
           </Button>
@@ -75,13 +82,17 @@ export default function Autores() {
         dataSource={data}
         locale={{ emptyText: "Nenhum autor cadastrado" }}
         rowKey="id"
+        onRow = {(record) => ({
+          onClick: () => {showModal(record);}
+        })}
       />
       
       {/* Renderiza o modal como componente JSX */}
       <Caixa 
         isModalOpen={isModalOpen} 
         handleOk={handleOk} 
-        handleCancel={handleCancel} 
+        handleCancel={handleCancel}
+        dados={autorSelecionado} 
         tipo={1}
       />
     </InnerLayout>
