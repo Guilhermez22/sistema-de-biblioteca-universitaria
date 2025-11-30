@@ -1,7 +1,7 @@
-import { Table, Button, Modal } from "antd";
+import { Table, Button, Modal, Popconfirm, message, Space } from "antd";
 import InnerLayout from "../components/InnerLayout";
 import AutoresDAO from "../daos/AutoresDAO.mjs";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import Caixa from "../components/Caixa.jsx";
 
@@ -9,69 +9,152 @@ export default function Autores() {
   const [data, setData] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [autorSelecionado, setAutorSelecionado] = useState(null);
+  const [modoEdicao, setModoEdicao] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const showModal = (dados) => {
-    if(dados) {
-      setAutorSelecionado(dados);
+  // Função para carregar autores
+  const carregarAutores = useCallback(async () => {
+    setLoading(true);
+    try {
+      const autoresDAO = new AutoresDAO();
+      const lista = await autoresDAO.carregarAutores();
+      console.log("Autores carregados:", lista);
+      setData(Array.isArray(lista) ? lista : []);
+    } catch (error) {
+      console.error("Erro ao carregar autores:", error);
+      setData([]);
+      message.error("Erro ao carregar autores!");
+    } finally {
+      setLoading(false);
     }
+  }, []);
+
+  // Carregar autores quando o componente montar
+  useEffect(() => {
+    carregarAutores();
+  }, [carregarAutores]);
+
+  const showModal = (dados = null) => {
+    setAutorSelecionado(dados);
+    setModoEdicao(!!dados);
     setIsModalOpen(true);
   };
 
-  const handleOk = () => {
+  const handleOk = async () => {
     setIsModalOpen(false);
+    setAutorSelecionado(null);
+    setModoEdicao(false);
+    
+    // Pequeno delay para garantir que o modal fechou antes de recarregar
+    setTimeout(() => {
+      carregarAutores();
+    }, 100);
+    
+    message.success(modoEdicao ? "Autor atualizado com sucesso!" : "Autor criado com sucesso!");
   };
 
   const handleCancel = () => {
     setIsModalOpen(false);
+    setAutorSelecionado(null);
+    setModoEdicao(false);
   };
 
-  useEffect(() => {
-    const autores = new AutoresDAO();
-    autores.carregarAutores().then((lista) => setData(lista));
-  }, []);
+  const excluirAutor = async (id) => {
+    try {
+      const autoresDAO = new AutoresDAO();
+      const sucesso = await autoresDAO.excluirAutor(id);
+
+      if (sucesso) {
+        await carregarAutores();
+        message.success("Autor excluído com sucesso!");
+      } else {
+        message.error("Não foi possível excluir o autor!");
+      }
+    } catch (error) {
+      message.error("Erro ao excluir autor!");
+      console.error("Erro ao excluir:", error);
+    }
+  };
+
+  const handleEditar = (record, e) => {
+    e?.stopPropagation();
+    showModal(record);
+  };
+
+  const handleExcluir = (id, e) => {
+    e?.stopPropagation();
+    excluirAutor(id);
+  };
 
   const columns = [
-    { title: "Nome", dataIndex: "nome", key: "nome" },
+    {
+      title: "Nome",
+      dataIndex: "nome",
+      key: "nome",
+    },
     {
       title: "Nacionalidade",
       dataIndex: "nacionalidade",
       key: "nacionalidade",
     },
     {
-      title: "Data de Nascimento",
-      dataIndex: "dataNascimento",
-      key: "dataNascimento",
+      title: "Biografia",
+      dataIndex: "biografia",
+      key: "biografia",
+      render: (text) => (
+        <span>
+          {text
+            ? text.length > 50
+              ? `${text.substring(0, 50)}...`
+              : text
+            : "-"}
+        </span>
+      ),
     },
     {
       title: "Ações",
-      render: () => (
-        <>
-          <Button type="link" onClick = {function Dados(){
-            showModal();
-            
-          }}>
-            <EditOutlined />
+      key: "acoes",
+      render: (_, record) => (
+        <Space>
+          <Button
+            type="link"
+            icon={<EditOutlined />}
+            onClick={(e) => handleEditar(record, e)}
+          >
             Editar
           </Button>
-          <Button type="link" danger>
-            <DeleteOutlined /> Excluir
-          </Button>
-        </>
+          <Popconfirm
+            title="Excluir Autor"
+            description="Tem certeza que deseja excluir este autor?"
+            onConfirm={(e) => handleExcluir(record.id, e)}
+            onCancel={(e) => e?.stopPropagation()}
+            okText="Sim"
+            cancelText="Não"
+          >
+            <Button
+              type="link"
+              danger
+              icon={<DeleteOutlined />}
+              onClick={(e) => e.stopPropagation()}
+            >
+              Excluir
+            </Button>
+          </Popconfirm>
+        </Space>
       ),
     },
   ];
 
   const CustomButton = () => (
     <Button
+      type="primary"
       style={{
-        color: "#ffffff",
-        backgroundColor: "#007bff",
         borderRadius: "5px",
         padding: "10px 20px",
       }}
-      onClick={showModal} // Corrigido: apenas chama showModal
+      onClick={() => showModal()}
     >
-      Novo
+      Novo Autor
     </Button>
   );
 
@@ -82,17 +165,19 @@ export default function Autores() {
         dataSource={data}
         locale={{ emptyText: "Nenhum autor cadastrado" }}
         rowKey="id"
-        onRow = {(record) => ({
-          onClick: () => {showModal(record);}
+        loading={loading}
+        onRow={(record) => ({
+          onClick: () => {
+            showModal(record);
+          },
         })}
       />
-      
-      {/* Renderiza o modal como componente JSX */}
-      <Caixa 
-        isModalOpen={isModalOpen} 
-        handleOk={handleOk} 
+
+      <Caixa
+        isModalOpen={isModalOpen}
+        handleOk={handleOk}
         handleCancel={handleCancel}
-        dados={autorSelecionado} 
+        dados={autorSelecionado}
         tipo={1}
       />
     </InnerLayout>

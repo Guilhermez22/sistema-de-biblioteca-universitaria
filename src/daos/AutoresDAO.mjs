@@ -2,49 +2,123 @@ import Autores from "../objetos/Autores.mjs";
 
 export default class AutoresDAO {
   constructor() {
-    this.chaveAutor = "autores"; // chave para localStorage
-    this.autores = [];
+    this.chaveAutor = "autores";
   }
-  async carregarAutores() {
+
+  carregarAutores() {
     try {
       const autoresJSON = localStorage.getItem(this.chaveAutor);
-      return autoresJSON ? JSON.parse(autoresJSON) : []; // Retorna um array vazio se não houver autores
+      return Promise.resolve(autoresJSON ? JSON.parse(autoresJSON) : []);
     } catch (e) {
       console.error("Erro ao carregar autores do localStorage:", e);
+      return Promise.resolve([]);
+    }
+  }
+
+  async carregarAutoresBackendFake() {
+    try {
+      const response = await fetch("http://localhost:5000/autores");
+      const autoresJSON = await response.json();
+      return autoresJSON;
+    } catch (error) {
+      console.error("Erro ao carregar do backend fake:", error);
       return [];
     }
   }
-  async carregarAutoresBackendFake(){
-    const response = await fetch('http://localhost:5000/autores'); 
-    const autoresJSON = await response.json();
-    return autoresJSON;
-  }
+
   gerarIdAutor() {
-    //Gera um ID único simples utilizando data e um número aleatório
     return Date.now().toString(36) + Math.random().toString(36).substring(2, 9);
   }
+
   arrumarAutores(autoresJSON) {
-    //autoresJSON é um objeto do tipo Autores
-    if (!autoresJSON || autoresJSON.length === 0) return {};
+    if (!autoresJSON) return null;
+
     return {
       id: autoresJSON.id || this.gerarIdAutor(),
-      nome: autoresJSON.getNome(),
-      nacionalidade: autoresJSON.getNacionalidade(),
-      dataNascimento: autoresJSON.getDataNascimento(),
-      biografia: autoresJSON.getBiografia(),
+      nome: autoresJSON.nome || "",
+      nacionalidade: autoresJSON.nacionalidade || "",
+      dataNascimento:
+        autoresJSON.dataNascimento || autoresJSON.nascimento || "",
+      biografia: autoresJSON.biografia || "",
     };
   }
+
   async salvarAutores(autores) {
-    const lista = await this.carregarAutores();
-    const objeto = this.arrumarAutores(autores);
-    if (!objeto.id) {
-      objeto.id = this.gerarIdAutor();
-    }
-    lista.push(objeto);
     try {
+      const lista = await this.carregarAutores();
+      const objeto = this.arrumarAutores(autores);
+
+      if (!objeto) {
+        console.error("Dados do autor inválidos");
+        return false;
+      }
+
+      lista.push(objeto);
       localStorage.setItem(this.chaveAutor, JSON.stringify(lista));
+      return true;
     } catch (e) {
       console.error("Erro ao salvar autores no localStorage:", e);
+      return false;
     }
+  }
+
+  async atualizarAutores(id, autor) {
+    try {
+      if (!id || !autor) {
+        console.error("ID ou autor não fornecido");
+        return false;
+      }
+
+      const lista = await this.carregarAutores();
+      const index = lista.findIndex((a) => a.id === id);
+
+      if (index === -1) {
+        console.error("Autor não encontrado para atualização");
+        return false;
+      }
+
+      // Mantém o ID original e atualiza outros campos
+      const autorAtualizado = {
+        ...lista[index], // mantém dados existentes
+        ...this.arrumarAutores(autor), // aplica novas propriedades
+        id: id, // GARANTE que o ID não mude
+      };
+
+      lista[index] = autorAtualizado;
+      localStorage.setItem(this.chaveAutor, JSON.stringify(lista));
+      return true;
+    } catch (e) {
+      console.error("Erro ao atualizar autores no localStorage:", e);
+      return false;
+    }
+  }
+
+  async excluirAutor(id) {
+    try {
+      if (!id) {
+        console.error("ID não fornecido");
+        return false;
+      }
+
+      const lista = await this.carregarAutores();
+      const novaLista = lista.filter((a) => a.id !== id);
+
+      // Verifica se realmente removeu algum item
+      if (novaLista.length === lista.length) {
+        console.error("Autor não encontrado para exclusão");
+        return false;
+      }
+
+      localStorage.setItem(this.chaveAutor, JSON.stringify(novaLista));
+      return true;
+    } catch (e) {
+      console.error("Erro ao excluir autor do localStorage:", e);
+      return false;
+    }
+  }
+
+  // Método alternativo com nome diferente (para compatibilidade)
+  async deletarAutores(id) {
+    return this.excluirAutor(id);
   }
 }

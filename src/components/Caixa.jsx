@@ -1,7 +1,8 @@
 import { Modal, Form, Input, DatePicker, Select } from "antd";
-import Autores from "../objetos/Autores.mjs"; //este é para criar o objeto Autor
-import AutoresDAO from "../daos/AutoresDAO.mjs"; //este é para salvar o objeto Autor no localStorage
+import Autores from "../objetos/Autores.mjs";
+import AutoresDAO from "../daos/AutoresDAO.mjs";
 import dayjs from "dayjs";
+import React from "react";
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -9,36 +10,78 @@ const { TextArea } = Input;
 function Caixa({ isModalOpen, handleOk, handleCancel, tipo, dados }) {
   const [form] = Form.useForm();
 
-  if (dados && tipo === 1) {
-    form.setFieldValue("nome", dados.nome);
-    form.setFieldValue("nacionalidade", dados.nacionalidade);
-    form.setFieldValue("dataNascimento", dayjs(dados.dataNascimento));
-    form.setFieldValue("biografia", dados.biografia);
+  function editarAutor(values) {
+    console.log("Editar autor chamado com dados:", values);
+    if (!dados) return;
+
+    const autoresDAO = new AutoresDAO();
+    autoresDAO.atualizarAutores(dados.id, values);
   }
+  React.useEffect(() => {
+    if (dados && tipo === 1) {
+      form.setFieldsValue({
+        nome: dados.nome,
+        nacionalidade: dados.nacionalidade,
+        dataNascimento: dados.dataNascimento
+          ? dayjs(dados.dataNascimento)
+          : null,
+        biografia: dados.biografia,
+      });
+    } else if (dados && tipo === 2) {
+      form.setFieldsValue({
+        titulo: dados.titulo,
+        isbn: dados.isbn,
+        ano: dados.ano,
+        categoria: dados.categoria,
+        autorId: dados.autorId,
+      });
+    } else if (dados && tipo === 3) {
+      form.setFieldsValue({
+        nomeAluno: dados.nomeAluno,
+        matricula: dados.matricula,
+        curso: dados.curso,
+        email: dados.email,
+        telefone: dados.telefone,
+      });
+    } else {
+      // Limpar formulário quando não há dados (modo criação)
+      form.resetFields();
+    }
+  }, [dados, tipo, form]);
 
   const onFinish = (values) => {
     console.log("Dados do formulário:", values);
+
     if (tipo === 1) {
-      // Salvar autor
-      const novoAutor = new Autores(); //cria um novo objeto autor
-      novoAutor.setNome(values.nome);
-      novoAutor.setNacionalidade(values.nacionalidade);
-      novoAutor.setDataNascimento(values.dataNascimento);
-      novoAutor.setBiografia(values.biografia);
-      const autoresDAO = new AutoresDAO();
-      autoresDAO.salvarAutores(novoAutor);
+      if (dados) {
+        // Modo edição - atualizar autor existente
+        editarAutor(values);
+      } else {
+        // Modo criação - salvar novo autor
+        const novoAutor = new Autores();
+        novoAutor.setNome(values.nome);
+        novoAutor.setNacionalidade(values.nacionalidade);
+        novoAutor.setBiografia(values.biografia);
+        const autoresDAO = new AutoresDAO();
+        autoresDAO.salvarAutores(novoAutor);
+      }
     }
-    handleOk(); // Fecha o modal após salvar
+
+    handleOk();
+  };
+
+  const handleModalOk = () => {
+    form.submit(); // Isso irá chamar onFinish
   };
 
   return (
     <Modal
-      title="Cadastro"
-      open={isModalOpen} //faz o modal abrir
-      onOk={() => form.submit()} //função para o que fazer ao clicar em salvar
-      onCancel={handleCancel} //função para o que fazer ao clicar em cancelar
-      okText="Salvar" //texto do botão salvar
-      cancelText="Cancelar" //texto do botão cancelar
+      title={dados ? "Editar" : "Cadastro"}
+      open={isModalOpen}
+      onOk={handleModalOk}
+      onCancel={handleCancel}
+      okText="Salvar"
+      cancelText="Cancelar"
       width={600}
     >
       {tipo === 1 && (
@@ -66,23 +109,6 @@ function Caixa({ isModalOpen, handleOk, handleCancel, tipo, dados }) {
             ]}
           >
             <Input placeholder="Ex: Brasileiro, Americano, etc." />
-          </Form.Item>
-
-          <Form.Item
-            label="Data de Nascimento"
-            name="dataNascimento"
-            rules={[
-              {
-                required: true,
-                message: "Por favor, selecione a data de nascimento!",
-              },
-            ]}
-          >
-            <DatePicker
-              style={{ width: "100%" }}
-              format="DD/MM/YYYY"
-              placeholder="Selecione a data"
-            />
           </Form.Item>
 
           <Form.Item label="Biografia" name="biografia">
