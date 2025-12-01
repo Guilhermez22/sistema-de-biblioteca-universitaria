@@ -37,7 +37,7 @@ export default class AutoresDAO {
     return {
       id: autoresJSON.getAutorId() || this.gerarIdAutor(),
       nome: autoresJSON.getNome() || "",
-      nacionalidade: autoresJSON.getNacionalidade()|| "",
+      nacionalidade: autoresJSON.getNacionalidade() || "",
       biografia: autoresJSON.getBiografia() || "",
     };
   }
