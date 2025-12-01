@@ -1,30 +1,32 @@
-import { Modal, Form, Input, DatePicker, Select } from "antd";
+// Caixa.jsx
+import React from "react";
+import { Modal, Form, Input, Select } from "antd";
 import Autores from "../objetos/Autores.mjs";
 import AutoresDAO from "../daos/AutoresDAO.mjs";
+import Livros from "../objetos/Livros.mjs";
+import LivrosDAO from "../daos/LivrosDAO.mjs";
 import Aluno from "../objetos/Aluno.mjs";
 import AlunosDAO from "../daos/AlunosDAO.mjs";
-import React from "react";
 
 const { Option } = Select;
 const { TextArea } = Input;
 
 function Caixa({ isModalOpen, handleOk, handleCancel, tipo, dados }) {
   const [form] = Form.useForm();
+  const [autores, setAutores] = React.useState([]);
 
-  function editarAutor(values) {
-    console.log("Editar autor chamado com dados:", values);
-    if (!dados) return;
+  // Carrega autores quando o modal abre para tipo === 2 (formulário de livro)
+  React.useEffect(() => {
+    if (tipo === 2) {
+      const autoresDAO = new AutoresDAO();
+      autoresDAO.carregarAutores().then((lista) => {
+        // lista já é array de objetos salvos (id, nome, ...)
+        setAutores(Array.isArray(lista) ? lista : []);
+      });
+    }
+  }, [tipo, isModalOpen]);
 
-    const autoresDAO = new AutoresDAO();
-    autoresDAO.atualizarAutores(dados.id, values);
-  }
-  function editarAluno(values) {
-    console.log("Editar aluno chamado com dados:", values);
-    if (!dados) return;
-
-    const alunosDAO = new AlunosDAO();
-    alunosDAO.atualizarAluno(dados.id, values);
-  }
+  // Preenche o formulário quando temos dados (edição)
   React.useEffect(() => {
     if (dados && tipo === 1) {
       form.setFieldsValue({
@@ -35,7 +37,6 @@ function Caixa({ isModalOpen, handleOk, handleCancel, tipo, dados }) {
     } else if (dados && tipo === 2) {
       form.setFieldsValue({
         titulo: dados.titulo,
-        isbn: dados.isbn,
         ano: dados.ano,
         categoria: dados.categoria,
         autorId: dados.autorId,
@@ -54,75 +55,141 @@ function Caixa({ isModalOpen, handleOk, handleCancel, tipo, dados }) {
     }
   }, [dados, tipo, form]);
 
-  function gerarIdAutor() {
-    return Date.now().toString(36) + Math.random().toString(36).substring(2, 9);
+  // ---------- CRUD / helpers ----------
+  function editarAutor(values) {
+    if (!dados) return;
+    const autoresDAO = new AutoresDAO();
+    autoresDAO.atualizarAutores(dados.id, values).then((ok) => {
+      if (!ok) console.error("Falha ao atualizar autor");
+    });
   }
 
-  const onFinish = (values) => {
-    console.log("Dados do formulário:", values);
+  function editarLivro(values) {
+    if (!dados) return;
+    const livrosDAO = new LivrosDAO();
+    // Monta um objeto Livros a partir dos valores do formulário
+    const livro = new Livros();
+    livro.setLivroId(dados.id); // garante ID correto
+    livro.setTitulo(values.titulo);
+    // ISBN NÃO é alterado (é gerado na criação); manter o ISBN atual
+    livro.setAno(values.ano);
+    livro.setCategoria(values.categoria);
+    livro.setAutorId(values.autorId);
+    livrosDAO.atualizarLivros(dados.id, livro).then((ok) => {
+      if (!ok) console.error("Falha ao atualizar livro");
+    });
+  }
 
-    if (tipo === 1) {
-      if (dados) {
-        // Modo edição - atualizar autor existente
-        editarAutor(values);
-      } else {
-        // Modo criação - salvar novo autor
-        const novoAutor = new Autores();
-        const autorId = gerarIdAutor();
+  function editarAluno(values) {
+    if (!dados) return;
+    const alunosDAO = new AlunosDAO();
+    alunosDAO.atualizarAluno(dados.id, values).then((ok) => {
+      if (!ok) console.error("Falha ao atualizar aluno");
+    });
+  }
 
-        novoAutor.setAutorId(autorId);
-        novoAutor.setNome(values.nome);
-        novoAutor.setNacionalidade(values.nacionalidade);
-        novoAutor.setBiografia(values.biografia);
-        const autoresDAO = new AutoresDAO();
-        autoresDAO.salvarAutores(novoAutor);
+  // onFinish trata criação/edição para os três tipos
+  const onFinish = async (values) => {
+    try {
+      // AUTOR (tipo 1)
+      if (tipo === 1) {
+        if (dados) {
+          // edição
+          editarAutor(values);
+        } else {
+          // criação
+          const novoAutor = new Autores();
+          const autoresDAO = new AutoresDAO();
+          const autorId = autoresDAO.gerarIdAutor();
+          novoAutor.setAutorId(autorId);
+          novoAutor.setNome(values.nome);
+          novoAutor.setNacionalidade(values.nacionalidade);
+          novoAutor.setBiografia(values.biografia);
+          await autoresDAO.salvarAutores(novoAutor);
+        }
       }
-    }
-    if (tipo === 3) {
-      if (dados) {
-        editarAluno(values);
-      } else {
-        const novoAluno = new Aluno();
 
-        novoAluno.setNome(values.nomeAluno);
-        novoAluno.setCurso(values.curso);
-        novoAluno.setEmail(values.email);
-        novoAluno.setTelefone(values.telefone);
-        const alunosDAO = new AlunosDAO();
-        alunosDAO.salvarAluno(novoAluno);
+      // LIVRO (tipo 2) - ISBN gerado automaticamente no DAO
+      if (tipo === 2) {
+        const livrosDAO = new LivrosDAO();
+        if (dados) {
+          // edição
+          editarLivro(values);
+        } else {
+          // criação
+          const novoLivro = new Livros();
+          novoLivro.setTitulo(values.titulo);
+          novoLivro.setAno(values.ano);
+          // NÃO setamos ISBN aqui (será gerado no salvar)
+          novoLivro.setCategoria(values.categoria);
+          novoLivro.setAutorId(values.autorId || null);
+          await livrosDAO.salvarLivros(novoLivro);
+        }
       }
-    }
 
-    handleOk();
+      // ALUNO (tipo 3)
+      if (tipo === 3) {
+        if (dados) {
+          editarAluno(values);
+        } else {
+          const novoAluno = new Aluno();
+          // campos do formulário de aluno: nomeAluno, matricula, curso, email, telefone
+          novoAluno.setNome(values.nomeAluno);
+          if (values.matricula) novoAluno.setMatricula(values.matricula);
+          if (values.curso) novoAluno.setCurso(values.curso);
+          if (values.email) novoAluno.setEmail(values.email);
+          if (values.telefone) novoAluno.setTelefone(values.telefone);
+
+          const alunosDAO = new AlunosDAO();
+          await alunosDAO.salvarAluno(novoAluno);
+        }
+      }
+
+      // fecha modal e reseta formulário
+      form.resetFields();
+      handleOk();
+    } catch (e) {
+      console.error("Erro no onFinish:", e);
+    }
   };
 
   const handleModalOk = () => {
-    form.submit(); // Isso irá chamar onFinish
+    form.submit();
   };
+
+  // título do modal condicional por tipo
+  const modalTitle = dados
+    ? tipo === 1
+      ? "Editar Autor"
+      : tipo === 2
+      ? "Editar Livro"
+      : "Editar Aluno"
+    : tipo === 1
+    ? "Cadastrar Autor"
+    : tipo === 2
+    ? "Cadastrar Livro"
+    : "Cadastrar Aluno";
 
   return (
     <Modal
-      title={dados ? "Editar" : "Cadastro"}
+      title={modalTitle}
       open={isModalOpen}
       onOk={handleModalOk}
-      onCancel={handleCancel}
+      onCancel={() => {
+        form.resetFields();
+        handleCancel();
+      }}
       okText="Salvar"
       cancelText="Cancelar"
       width={600}
+      destroyOnClose={true}
     >
       {tipo === 1 && (
-        <Form
-          form={form}
-          layout="vertical"
-          name="autorForm"
-          onFinish={onFinish}
-        >
+        <Form form={form} layout="vertical" name="autorForm" onFinish={onFinish}>
           <Form.Item
             label="Nome do Autor"
             name="nome"
-            rules={[
-              { required: true, message: "Por favor, insira o nome do autor!" },
-            ]}
+            rules={[{ required: true, message: "Por favor, insira o nome do autor!" }]}
           >
             <Input placeholder="Digite o nome completo do autor" />
           </Form.Item>
@@ -130,9 +197,7 @@ function Caixa({ isModalOpen, handleOk, handleCancel, tipo, dados }) {
           <Form.Item
             label="Nacionalidade"
             name="nacionalidade"
-            rules={[
-              { required: true, message: "Por favor, insira a nacionalidade!" },
-            ]}
+            rules={[{ required: true, message: "Por favor, insira a nacionalidade!" }]}
           >
             <Input placeholder="Ex: Brasileiro, Americano, etc." />
           </Form.Item>
@@ -142,43 +207,23 @@ function Caixa({ isModalOpen, handleOk, handleCancel, tipo, dados }) {
           </Form.Item>
         </Form>
       )}
+
       {tipo === 2 && (
-        <Form
-          form={form}
-          layout="vertical"
-          name="livroForm"
-          onFinish={onFinish}
-        >
+        <Form form={form} layout="vertical" name="livroForm" onFinish={onFinish}>
           <Form.Item
             label="Título do Livro"
             name="titulo"
-            rules={[
-              {
-                required: true,
-                message: "Por favor, insira o título do livro!",
-              },
-            ]}
+            rules={[{ required: true, message: "Por favor, insira o título do livro!" }]}
           >
             <Input placeholder="Digite o título do livro" />
           </Form.Item>
 
-          <Form.Item
-            label="ISBN"
-            name="isbn"
-            rules={[{ required: true, message: "Por favor, insira o ISBN!" }]}
-          >
-            <Input placeholder="Ex: 978-3-16-148410-0" />
-          </Form.Item>
+          {/* ISBN NÃO aparece no formulário — será gerado automaticamente pelo DAO */}
 
           <Form.Item
             label="Ano de Publicação"
             name="ano"
-            rules={[
-              {
-                required: true,
-                message: "Por favor, insira o ano de publicação!",
-              },
-            ]}
+            rules={[{ required: true, message: "Por favor, insira o ano de publicação!" }]}
           >
             <Input type="number" placeholder="Ex: 2020" />
           </Form.Item>
@@ -186,9 +231,7 @@ function Caixa({ isModalOpen, handleOk, handleCancel, tipo, dados }) {
           <Form.Item
             label="Categoria"
             name="categoria"
-            rules={[
-              { required: true, message: "Por favor, selecione a categoria!" },
-            ]}
+            rules={[{ required: true, message: "Por favor, selecione a categoria!" }]}
           >
             <Select placeholder="Selecione uma categoria">
               <Option value="Computação">Computação</Option>
@@ -203,57 +246,40 @@ function Caixa({ isModalOpen, handleOk, handleCancel, tipo, dados }) {
           <Form.Item
             label="Autor"
             name="autorId"
-            rules={[
-              { required: true, message: "Por favor, selecione o autor!" },
-            ]}
+            rules={[{ required: true, message: "Por favor, selecione o autor!" }]}
           >
             <Select placeholder="Selecione o autor">
-              <Option value={1}>Thomas H. Cormen</Option>
-              <Option value={2}>Silberschatz</Option>
+              {autores.length === 0 ? (
+                <Option value={null} disabled>
+                  Nenhum autor cadastrado
+                </Option>
+              ) : (
+                autores.map((a) => (
+                  <Option key={a.id} value={a.id}>
+                    {a.nome}
+                  </Option>
+                ))
+              )}
             </Select>
           </Form.Item>
         </Form>
       )}
+
       {tipo === 3 && (
-        <Form
-          form={form}
-          layout="vertical"
-          name="alunoForm"
-          onFinish={onFinish}
-        >
+        <Form form={form} layout="vertical" name="alunoForm" onFinish={onFinish}>
           <Form.Item
             label="Nome do Aluno"
             name="nomeAluno"
-            rules={[
-              { required: true, message: "Por favor, insira o nome do aluno!" },
-            ]}
+            rules={[{ required: true, message: "Por favor, insira o nome do aluno!" }]}
           >
             <Input placeholder="Digite o nome completo do aluno" />
           </Form.Item>
+
           <Form.Item
-            label="E-mail"
-            name="email"
-            rules={[
-              {
-                required: true,
-                message: "Por favor, insira o e-mail do aluno!",
-              },
-              { type: "email", message: "Por favor, insira um e-mail válido!" },
-            ]}
+            label="Matrícula"
+            name="matricula"
           >
-            <Input placeholder="Digite o e-mail do aluno" />
-          </Form.Item>
-          <Form.Item
-            label="Telefone"
-            name="telefone"
-            rules={[
-              {
-                required: true,
-                message: "Por favor, insira o telefone do aluno!",
-              },
-            ]}
-          >
-            <Input placeholder="Digite o telefone do aluno" />
+            <Input placeholder="Número de matrícula" />
           </Form.Item>
 
           <Form.Item
@@ -262,9 +288,7 @@ function Caixa({ isModalOpen, handleOk, handleCancel, tipo, dados }) {
             rules={[{ required: true, message: "Por favor, insira o curso!" }]}
           >
             <Select placeholder="Selecione o curso">
-              <Option value="Engenharia da Computação">
-                Engenharia da Computação
-              </Option>
+              <Option value="Engenharia da Computação">Engenharia da Computação</Option>
               <Option value="Direito">Direito</Option>
               <Option value="Medicina">Medicina</Option>
               <Option value="Administração">Administração</Option>
@@ -274,11 +298,11 @@ function Caixa({ isModalOpen, handleOk, handleCancel, tipo, dados }) {
           </Form.Item>
 
           <Form.Item
-            label="Email"
+            label="E-mail"
             name="email"
             rules={[
-              { required: true, message: "Por favor, insira o email!" },
-              { type: "email", message: "Por favor, insira um email válido!" },
+              { required: true, message: "Por favor, insira o e-mail do aluno!" },
+              { type: "email", message: "Por favor, insira um e-mail válido!" },
             ]}
           >
             <Input placeholder="exemplo@email.com" />
