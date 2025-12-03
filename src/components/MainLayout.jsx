@@ -6,7 +6,8 @@ import {
   MenuOutlined,
   ReadOutlined,
   TeamOutlined,
-  BarChartOutlined
+  BarChartOutlined,
+  UserOutlined
 } from "@ant-design/icons";
 
 
@@ -40,7 +41,7 @@ const MainLayout = () => {
     },
     {
       key: "3",
-      label: <Link to="/alunos" style={{ color: "white" }}>Alunos</Link>,
+      label: <Link to="/alunos" style={{ color: "white" }}><UserOutlined />Alunos</Link>,
     },
     {
       key: "4",
