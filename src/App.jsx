@@ -2,6 +2,8 @@ import "./App.css";
 import { BrowserRouter as Router } from "react-router-dom";
 import Rotas from "./routes/routes";
 import { ConfigProvider } from "antd";
+import { PlusOutlined } from '@ant-design/icons';
+import 'antd/dist/reset.css';
 import ptBR from 'antd/es/locale/pt_BR';
 import dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';

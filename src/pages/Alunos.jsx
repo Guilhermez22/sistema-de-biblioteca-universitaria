@@ -2,7 +2,8 @@ import { Table, Button, Modal, Popconfirm, message, Space } from "antd";
 import InnerLayout from "../components/InnerLayout";
 import AlunosDAO from "../daos/AlunosDAO.mjs";
 import { useEffect, useState, useCallback } from "react";
-import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
+// 1. Importar o ícone PlusOutlined (já estava correto)
+import { EditOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import Caixa from "../components/Caixa.jsx";
 
 export default function Alunos() {
@@ -140,7 +141,7 @@ export default function Alunos() {
             Editar
           </Button>
           <Popconfirm
-            title="Excluir Autor"
+            title="Excluir Aluno"
             description="Tem certeza que deseja excluir este aluno?"
             onConfirm={(e) => handleExcluir(record.id, e)}
             onCancel={(e) => e?.stopPropagation()}
@@ -164,13 +165,17 @@ export default function Alunos() {
   const CustomButton = () => (
     <Button
       type="primary"
+      icon={<PlusOutlined />}
       style={{
+        // CORREÇÃO: Adicionando backgroundColor e color para preto e branco
+        backgroundColor: 'black', 
+        color: 'white',
         borderRadius: "5px",
         padding: "10px 20px",
       }}
       onClick={() => showModal()}
     >
-      Novo Autor
+      Novo Aluno
     </Button>
   );
 

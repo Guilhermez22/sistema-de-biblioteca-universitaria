@@ -1,10 +1,14 @@
-// LIVROS.jsx
 import { Table, Button, Modal, Popconfirm, message, Space } from "antd";
 import InnerLayout from "../components/InnerLayout";
 import LivrosDAO from "../daos/LivrosDAO.mjs";
 import AutoresDAO from "../daos/AutoresDAO.mjs";
 import { useEffect, useState, useCallback } from "react";
-import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
+// 1. IMPORTAR o ícone PlusOutlined aqui (já estava correto)
+import {
+  EditOutlined,
+  DeleteOutlined,
+  PlusOutlined,
+} from "@ant-design/icons";
 import Caixa from "../components/Caixa.jsx";
 
 export default function Livros() {
@@ -165,7 +169,11 @@ export default function Livros() {
   const CustomButton = () => (
     <Button
       type="primary"
+      icon={<PlusOutlined />}
       style={{
+        // ALTERAÇÃO: Fundo preto e texto/ícone branco
+        backgroundColor: 'black',
+        color: 'white', 
         borderRadius: "5px",
         padding: "10px 20px",
       }}
@@ -200,3 +208,6 @@ export default function Livros() {
     </InnerLayout>
   );
 }
+
+
+
