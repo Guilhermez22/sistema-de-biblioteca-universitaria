@@ -1,4 +1,5 @@
-# 📚 Sistema de Biblioteca Universitária  
+# 📚 Sistema de Biblioteca Universitária
+
 ### (React + Tailwind + Ant Design + JavaScript)
 
 Este projeto consiste no desenvolvimento de um **sistema web completo** para gerenciamento de uma Biblioteca Universitária, incluindo CRUDs de Livros, Autores e Alunos, além de um relatório de livros emprestados por aluno.
@@ -8,36 +9,51 @@ Este projeto consiste no desenvolvimento de um **sistema web completo** para ger
 ## 🚀 Tecnologias Utilizadas
 
 ### **Frontend**
-- React  
-- JavaScript (ESM)  
-- TailwindCSS  
-- Ant Design (antd)  
+
+- React
+- JavaScript (ESM)
+- TailwindCSS
+- Ant Design (antd)
 - LocalStorage ou Fetch API (para persistência)
 
 ### **Backend (Opcional)**
-- Node.js + Express  
-- MongoDB + Mongoose  
+
+- Node.js + Express
+- MongoDB + Mongoose
 - Rotas REST
 
 ---
 
 ## 📁 Estrutura de Pastas
+
 ```txt
-📦 projeto
-┣ 📂 frontend
-│ ┣ 📂 src
-│ │ ┣ 📂 components # Componentes reutilizáveis
-│ │ ┣ 📂 pages # Páginas principais (Livros, Autores, Alunos, Relatórios)
-│ │ ┣ 📂 daos # Data Access Objects → LocalStorage ou fetch()
-│ │ ┣ 📂 models # Classes/Interfaces de Livro, Autor e Aluno
-│ │ ┗ App.jsx # Roteamento e layout principal
-┗ 📂 backend (opcional)
-┣ 📂 models # Schemas Mongoose
-┣ 📂 daos # Acesso ao banco via Mongoose
-┣ 📂 controllers # Lógica e regras de negócio
-┣ 📂 routes # Rotas da API REST
-┗ server.js # Servidor Express
+projeto/
+├── dist/
+├── node_modules/
+├── public/
+│   └── biblioteca.avif
+├── src/
+│   ├── assets/
+│   ├── components/
+│   ├── daos/
+│   ├── objetos/
+│   ├── pages/
+│   ├── routes/
+│   ├── App.css
+│   ├── App.jsx
+│   ├── index.css
+│   └── main.jsx
+├── .gitignore
+├── backend.json
+├── eslint.config.js
+├── index.html
+├── package-lock.json
+├── package.json
+├── README.md
+└── vite.config.js
+
 ```
+
 ---
 
 ## 🎯 Objetivo do Projeto
