@@ -7,19 +7,21 @@ import Emprestimo from '../pages/Emprestimo';
 import Relatorios from '../pages/Relatorio';
 
 
-function Rotas(){
-    return(
+function Rotas() {
+    return (
         <Routes>
-            <Route path='/' element={<MainLayout/>}>
-                <Route index element={<Navigate to="livros" />} />
-                <Route path='livros' element={<Livros/>} />
-                <Route path='autores' element={<Autores/>} />
-                <Route path='emprestimo' element={<Emprestimo/>} />
-                <Route path='alunos' element={<Alunos/>} />
-                <Route path='relatorios' element={<Relatorios/>} />
+            <Route path="/" element={<MainLayout />}>
+                <Route index element={<Navigate to="/livros" replace />} />
+                <Route path="livros" element={<Livros />} />
+                <Route path="autores" element={<Autores />} />
+                <Route path="emprestimo" element={<Emprestimo />} />
+                <Route path="alunos" element={<Alunos />} />
+                <Route path="relatorios" element={<Relatorios />} />
+                {/* Rota para páginas não encontradas (opcional) */}
+                <Route path="*" element={<Navigate to="/livros" replace />} />
             </Route>
         </Routes>
-    )
+    );
 }
 
 export default Rotas;
